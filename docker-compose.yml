@@ -1,0 +1,138 @@
+version: "3"
+
+services:
+  reverse-proxy:
+    container_name: traefik
+    # The official v2 Traefik docker image
+    image: traefik:v2.8
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  adguardhome:
+    container_name: adguardhome
+    image: adguard/adguardhome
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./adguardhome/work:/opt/adguardhome/work
+      - ./adguardhome/conf:/opt/adguardhome/conf
+    ports:
+      # DNS
+      - 53:53/tcp
+      - 53:53/udp
+      # DHCP server
+      # - 67:67/udp
+      # - 68:68/tcp
+      # - 68:68/udp
+      # HTTPS/DNS-over-HTTPS
+      # - 443:443/tcp
+      # DNS-over-TLS
+      - 853:853/tcp
+      # WebUI
+      - 8092:80/tcp
+
+  # pihole:
+  #   container_name: pihole
+  #   image: pihole/pihole:latest
+  #   ports:
+  #     - "53:53/tcp"
+  #     - "53:53/udp"
+  #       #- "67:67/udp"
+  #     - "8053:80/tcp"
+  #   environment:
+  #     TZ: 'Europe/Zagreb'
+  #     WEBPASSWORD: 'test'
+  #     ServerIP: '192.168.50.101'
+  #     PROXY_LOCATION: 'pihole'
+  #     VIRTUAL_PORT: 80
+  #     VIRTUAL_HOST: 'pihole.lan'
+  #   # Volumes store your data between container upgrades
+  #   volumes:
+  #     - './pihole/etc-pihole:/etc/pihole'
+  #     - './pihole/etc-dnsmasq.d:/etc/dnsmasq.d'
+  #   # Recommended but not required (DHCP needs NET_ADMIN)
+  #   #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+  #   restart: unless-stopped
+  #   labels:
+  #     - "traefik.http.routers.hass.rule=Host(`pihole.docker.localhost`)"
+
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - ./hass:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    labels:
+      - "traefik.http.routers.hass.rule=Host(`hass.docker.localhost`)"
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    privileged: true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Zagreb
+      - JELLYFIN_PublishedServerUrl=192.168.50.101 #optional
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - /media:/media
+    ports:
+      - 8096:8096
+      - 8920:8920 #optional
+      - 7359:7359/udp #optional
+      - 1900:1900/udp #optional
+    restart: unless-stopped
+    labels:
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.docker.localhost`)"
+
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    privileged: true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+    volumes:
+      - ./syncthing:/config
+      - /home/pi/Sync:/data1
+    ports:
+      - 8384:8384
+      - 22000:22000/tcp
+      - 22000:22000/udp
+      - 21027:21027/udp
+    restart: unless-stopped
+    labels:
+      - "traefik.http.routers.syncthing.rule=Host(`syncthing.docker.localhost`)"
+
+  paperless-ngx:
+    image: lscr.io/linuxserver/paperless-ngx:latest
+    container_name: paperless-ngx
+    privileged: true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Zagreb
+      # - REDIS_URL= #optional
+    volumes:
+      - ./paperless/config:/config
+      - ./paperless/data:/data
+    ports:
+      - 8091:8000
+    restart: unless-stopped
