@@ -3,7 +3,6 @@
 todo:
 - fix permissions
 - remove privileged
-- setup adguard
 - setup vpn
 
 # misc
@@ -15,3 +14,12 @@ todo:
 - fix pihole / network bullshit
 
 `sudo ip route add default via 192.168.50.1`
+
+- monitoring
+
+Use cockpit project, available at port <hostname>:9090
+
+```
+$ sudo apt install cockpit
+$ sudo systemctl start cockpit
+```
