@@ -6,7 +6,7 @@ services:
     image: traefik:v2.8
     command:
       - "--api.insecure=true"
-      # - "--accesslog=true"
+      - "--accesslog=true"
       - "--providers.docker"
       - "--providers.docker.exposedbydefault=false"
     ports:
@@ -15,6 +15,10 @@ services:
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
   adguardhome:
     container_name: adguardhome
@@ -44,7 +48,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.adguard.rule=Host(`adguard.local`)"
-      - "traefik.http.services.adguard.loadbalancer.server.port=8092"
+      - "traefik.http.services.adguard.loadbalancer.server.port=80"
 
   homeassistant:
     container_name: homeassistant
@@ -56,7 +60,6 @@ services:
     privileged: true
     network_mode: host
     labels:
-      - "traefik.enable=true"
       - "traefik.http.routers.hass.rule=Host(`hass.local`)"
       - "traefik.http.services.hass.loadbalancer.server.port=8123"
 
@@ -74,7 +77,7 @@ services:
       - ./jellyfin/cache:/cache
       - /media:/media
     ports:
-      - 8096:8096
+      # - 8096:8096
       - 8920:8920 #optional
       - 7359:7359/udp #optional
       - 1900:1900/udp #optional
@@ -121,5 +124,6 @@ services:
       - 8091:8000
     restart: unless-stopped
     labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.paperless.rule=Host(`paperless.local`)"
-      - "traefik.http.services.paperless.loadbalancer.server.port=8000"
+      - "traefik.http.services.paperless.loadbalancer.server.port=8091"
