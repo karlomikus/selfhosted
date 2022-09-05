@@ -23,3 +23,7 @@ Use cockpit project, available at port <hostname>:9090
 $ sudo apt install cockpit
 $ sudo systemctl start cockpit
 ```
+
+- Custom domains
+  
+Via router, follow dnsmasq tutorial https://github.com/RMerl/asuswrt-merlin.ng/wiki/Custom-domains-with-dnsmasq
