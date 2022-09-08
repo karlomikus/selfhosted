@@ -1,0 +1,25 @@
+# These rules are related to containers running in network_mode:host
+# With host networking the container isn’t assigned an
+# IP or directly associated with the traefik proxy network, it’s
+# using the hosts network stack and so you have to target the host IP.
+http:
+  routers:
+    adguard:
+      entryPoints:
+        - insecure
+      rule: Host(`adguard.local`)
+      service: adguard
+    hass:
+      entryPoints:
+        - insecure
+      rule: Host(`hass.local`)
+      service: hass
+  services:
+    adguard:
+      loadBalancer:
+        servers:
+          - url: 'http://<YOUR-SERVER-IP>:8021'
+    hass:
+      loadBalancer:
+        servers:
+          - url: 'http://<YOUR-SERVER-IP>:8123'

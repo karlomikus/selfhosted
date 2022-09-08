@@ -1,72 +1,59 @@
 version: "3"
 
+networks:
+  web-proxy:
+    external: true
+
 services:
-  reverse-proxy:
+  traefik:
     container_name: traefik
     image: traefik:v2.8
-    command:
-      - "--api.insecure=true"
-      - "--accesslog=true"
-      - "--providers.docker"
-      - "--providers.docker.exposedbydefault=false"
+    networks:
+      - web-proxy
     ports:
       - "80:80"
       - "8080:8080"
     volumes:
-      # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.yml:/traefik.yml
+      - ./rules.yml:/rules.yml
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
-  adguardhome:
-    container_name: adguardhome
+  # Network wide adblock (setup admin port on 8021)
+  adguard:
+    container_name: adguard
     image: adguard/adguardhome
-    restart: unless-stopped
-    privileged: true
-    environment:
-      - PUID=1000
-      - PGID=1000
+    restart: always
+    network_mode: host
     volumes:
       - ./adguardhome/work:/opt/adguardhome/work
       - ./adguardhome/conf:/opt/adguardhome/conf
-    ports:
-      # DNS
-      - 53:53/tcp
-      - 53:53/udp
-      # DHCP server
-      # - 67:67/udp
-      # - 68:68/tcp
-      # - 68:68/udp
-      # HTTPS/DNS-over-HTTPS
-      # - 443:443/tcp
-      # DNS-over-TLS
-      - 853:853/tcp
-      # WebUI
-      - 8092:80/tcp
-    labels:
+    labels: # Check rules.yml
       - "traefik.enable=true"
-      - "traefik.http.routers.adguard.rule=Host(`adguard.local`)"
-      - "traefik.http.services.adguard.loadbalancer.server.port=80"
+      - "traefik.http.services.adguard.loadbalancer.server.port=8021"
 
+  # Home automation
   homeassistant:
     container_name: homeassistant
     image: "ghcr.io/home-assistant/home-assistant:stable"
+    network_mode: host
     volumes:
       - ./hass:/config
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
-    privileged: true
-    network_mode: host
-    labels:
-      - "traefik.http.routers.hass.rule=Host(`hass.local`)"
+    labels: # Check rules.yml
+      - "traefik.enable=true"
       - "traefik.http.services.hass.loadbalancer.server.port=8123"
 
+  # Media center
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    privileged: true
+    networks:
+      - web-proxy
     environment:
       - PUID=1000
       - PGID=1000
@@ -75,55 +62,14 @@ services:
     volumes:
       - ./jellyfin/config:/config
       - ./jellyfin/cache:/cache
-      - /media:/media
+      - /mnt/wintorrents:/media
     ports:
-      # - 8096:8096
+      - 8096:8096
       - 8920:8920 #optional
       - 7359:7359/udp #optional
-      - 1900:1900/udp #optional
+      #- 1900:1900/udp #optional
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.local`)"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
-
-  syncthing:
-    image: lscr.io/linuxserver/syncthing:latest
-    container_name: syncthing
-    privileged: true
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/London
-    volumes:
-      - ./syncthing:/config
-      - /home/pi/Sync:/data1
-    ports:
-      # - 8384:8384
-      - 22000:22000/tcp
-      - 22000:22000/udp
-      - 21027:21027/udp
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.syncthing.rule=Host(`syncthing.local`)"
-      - "traefik.http.services.syncthing.loadbalancer.server.port=8384"
-
-  paperless-ngx:
-    image: lscr.io/linuxserver/paperless-ngx:latest
-    container_name: paperless-ngx
-    privileged: true
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Zagreb
-    volumes:
-      - ./paperless/config:/config
-      - ./paperless/data:/data
-    ports:
-      - 8091:8000
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.paperless.rule=Host(`paperless.local`)"
-      - "traefik.http.services.paperless.loadbalancer.server.port=8091"

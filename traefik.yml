@@ -1,0 +1,15 @@
+api:
+  insecure: true
+  dashboard: true
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    filename: rules.yml
+    watch: true
+
+entryPoints:
+  insecure:
+    address: ":80"
