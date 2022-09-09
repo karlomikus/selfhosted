@@ -8,17 +8,12 @@ services:
   traefik:
     container_name: traefik
     image: traefik:v2.8
+    restart: always
     networks:
       - web-proxy
     ports:
-      - 80:80
-      # - 443:443
-    environment:
-      - CADDY_INGRESS_NETWORKS=web-proxy
-    networks:
-      - web-proxy
-    # extra_hosts:
-      # - host.docker.internal:host-gateway
+      - "80:80"
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./traefik.yml:/traefik.yml
@@ -27,6 +22,24 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    networks:
+      - web-proxy
+    ports:
+      - 9000:9000 # web access
+      - 9443:9443 # secure web access
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portainer:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.entrypoints=secure,insecure"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.local`)"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
 
   # Network wide adblock (setup admin port on 8021)
   adguard:
