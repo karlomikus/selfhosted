@@ -11,8 +11,14 @@ services:
     networks:
       - web-proxy
     ports:
-      - "80:80"
-      - "8080:8080"
+      - 80:80
+      # - 443:443
+    environment:
+      - CADDY_INGRESS_NETWORKS=web-proxy
+    networks:
+      - web-proxy
+    # extra_hosts:
+      # - host.docker.internal:host-gateway
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./traefik.yml:/traefik.yml
