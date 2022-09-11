@@ -7,19 +7,38 @@ http:
     adguard:
       entryPoints:
         - insecure
-      rule: Host(`adguard.local`)
+        - secure
+      rule: Host(`adguard.local.<YOUR_DOMAIN>`)
+      tls:
+        certResolver: le
       service: adguard
     hass:
       entryPoints:
         - insecure
-      rule: Host(`hass.local`)
+        - secure
+      rule: Host(`hass.local.<YOUR_DOMAIN>`)
+      tls:
+        certResolver: le
       service: hass
+    cockpit:
+      entryPoints:
+        - insecure
+        - secure
+      rule: Host(`cockpit.local.<YOUR_DOMAIN>`)
+      tls:
+        certResolver: le
+      service: cockpit
+
   services:
     adguard:
       loadBalancer:
         servers:
-          - url: 'http://<YOUR-SERVER-IP>:8021'
+          - url: 'http://<YOUR_SEREVER_IP>:8021'
     hass:
       loadBalancer:
         servers:
-          - url: 'http://<YOUR-SERVER-IP>:8123'
+          - url: 'http://<YOUR_SEREVER_IP>:8123'
+    cockpit:
+      loadBalancer:
+        servers:
+          - url: 'http://<YOUR_SEREVER_IP>:9090'

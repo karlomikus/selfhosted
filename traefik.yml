@@ -1,3 +1,6 @@
+log:
+  level: INFO
+
 api:
   insecure: true
   dashboard: true
@@ -13,3 +16,14 @@ providers:
 entryPoints:
   insecure:
     address: ":80"
+  secure:
+    address: ":443"
+
+certificatesResolvers:
+  le:
+    acme:
+      #caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+      storage: /letsencrypt/acme.json
+      email: EMAIL
+      dnsChallenge:
+        provider: cloudflare

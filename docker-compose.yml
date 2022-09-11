@@ -9,18 +9,23 @@ services:
     container_name: traefik
     image: traefik:v2.8
     restart: always
+    environment:
+      - CF_API_EMAIL=$CF_API_EMAIL
+      - CF_API_KEY=$CF_API_KEY
     networks:
       - web-proxy
     ports:
       - "80:80"
-      - "8080:8080"
+      - "443:443"
     volumes:
+      - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
       - ./traefik.yml:/traefik.yml
       - ./rules.yml:/rules.yml
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.local.$DOMAIN`)"
+      - "traefik.http.routers.traefik.tls.certresolver=le"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
   portainer:
@@ -28,20 +33,17 @@ services:
     image: portainer/portainer-ce:latest
     networks:
       - web-proxy
-    ports:
-      - 9000:9000 # web access
-      - 9443:9443 # secure web access
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./portainer:/data
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.portainer.entrypoints=secure,insecure"
-      - "traefik.http.routers.portainer.rule=Host(`portainer.local`)"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.local.$DOMAIN`)"
+      - "traefik.http.routers.portainer.tls.certresolver=le"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
 
-  # Network wide adblock (setup admin port on 8021)
+  # Network wide adblock (setup admin port on 8021) - Check rules.yml
   adguard:
     container_name: adguard
     image: adguard/adguardhome
@@ -50,11 +52,8 @@ services:
     volumes:
       - ./adguardhome/work:/opt/adguardhome/work
       - ./adguardhome/conf:/opt/adguardhome/conf
-    labels: # Check rules.yml
-      - "traefik.enable=true"
-      - "traefik.http.services.adguard.loadbalancer.server.port=8021"
 
-  # Home automation
+  # Home automation - Check rules.yml
   homeassistant:
     container_name: homeassistant
     image: "ghcr.io/home-assistant/home-assistant:stable"
@@ -63,9 +62,24 @@ services:
       - ./hass:/config
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
-    labels: # Check rules.yml
+
+  snapdrop:
+    image: lscr.io/linuxserver/snapdrop:latest
+    container_name: snapdrop
+    networks:
+      - web-proxy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Zagreb
+    volumes:
+      - ./snapdrop:/config
+    restart: unless-stopped
+    labels:
       - "traefik.enable=true"
-      - "traefik.http.services.hass.loadbalancer.server.port=8123"
+      - "traefik.http.routers.snapdrop.rule=Host(`snapdrop.local.$DOMAIN`)"
+      - "traefik.http.routers.snapdrop.tls.certresolver=le"
+      - "traefik.http.services.snapdrop.loadbalancer.server.port=80"
 
   # Media center
   jellyfin:
@@ -77,18 +91,19 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Zagreb
-      - JELLYFIN_PublishedServerUrl=192.168.50.101 #optional
+      - JELLYFIN_PublishedServerUrl=$DOMAIN #optional
     volumes:
       - ./jellyfin/config:/config
       - ./jellyfin/cache:/cache
       - /mnt/wintorrents:/media
     ports:
-      - 8096:8096
-      - 8920:8920 #optional
-      - 7359:7359/udp #optional
-      #- 1900:1900/udp #optional
+      # - 8096:8096 # webui
+      # - 8920:8920 # Https webUI optional
+      - 7359:7359/udp #optional Allows clients to discover Jellyfin on the local network.
+      # - 1900:1900/udp #optional Service discovery used by DNLA and clients.
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.local`)"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.local.$DOMAIN`)"
+      - "traefik.http.routers.jellyfin.tls.certresolver=le"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
