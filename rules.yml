@@ -2,13 +2,14 @@
 # With host networking the container isn’t assigned an
 # IP or directly associated with the traefik proxy network, it’s
 # using the hosts network stack and so you have to target the host IP.
+# These rules are related to containers running in network_mode:host
 http:
   routers:
     adguard:
       entryPoints:
         - insecure
         - secure
-      rule: Host(`adguard.local.<YOUR_DOMAIN>`)
+      rule: Host(`adguard.<YOUR_DOMAIN>`)
       tls:
         certResolver: le
       service: adguard
@@ -16,29 +17,53 @@ http:
       entryPoints:
         - insecure
         - secure
-      rule: Host(`hass.local.<YOUR_DOMAIN>`)
+      rule: Host(`hass.<YOUR_DOMAIN>`)
       tls:
         certResolver: le
       service: hass
-    cockpit:
+    jellyfin: # on PC
       entryPoints:
         - insecure
         - secure
-      rule: Host(`cockpit.local.<YOUR_DOMAIN>`)
+      rule: Host(`jellyfin.<YOUR_DOMAIN>`)
       tls:
         certResolver: le
-      service: cockpit
+      service: jellyfin
+    paperless: # on PC
+      entryPoints:
+        - insecure
+        - secure
+      rule: Host(`paperless.<YOUR_DOMAIN>`)
+      tls:
+        certResolver: le
+      service: paperless
+    grocy: # on PC
+      entryPoints:
+        - insecure
+        - secure
+      rule: Host(`grocy.<YOUR_DOMAIN>`)
+      tls:
+        certResolver: le
+      service: grocy
 
   services:
     adguard:
       loadBalancer:
         servers:
-          - url: 'http://<YOUR_SEREVER_IP>:8021'
+          - url: 'http://<YOUR_SERVER_IP>:8021'
     hass:
       loadBalancer:
         servers:
-          - url: 'http://<YOUR_SEREVER_IP>:8123'
-    cockpit:
+          - url: 'http://<YOUR_SERVER_IP>:8123'
+    jellyfin:
       loadBalancer:
         servers:
-          - url: 'http://<YOUR_SEREVER_IP>:9090'
+          - url: 'http://<YOUR_SERVER_IP>:8096'
+    paperless:
+      loadBalancer:
+        servers:
+          - url: 'http://<YOUR_SERVER_IP>:8099'
+    grocy:
+      loadBalancer:
+        servers:
+          - url: 'http://<YOUR_SERVER_IP>:8098'

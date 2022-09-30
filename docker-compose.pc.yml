@@ -1,0 +1,54 @@
+version: "3"
+
+services:
+  # Media center
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Zagreb
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - /path/to/media:/torrents
+    ports:
+      - 8096:8096 # webui
+      # - 8920:8920 # Https webUI optional
+      - 7359:7359/udp #optional Allows clients to discover Jellyfin on the local network.
+      - 1900:1900/udp #optional Service discovery used by DNLA and clients.
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  paperless-ngx:
+    image: lscr.io/linuxserver/paperless-ngx:latest
+    container_name: paperless-ngx
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Zagreb
+      - PAPERLESS_URL=https://paperless.$DOMAIN
+    volumes:
+      - ./paperless/config:/config
+      - ./paperless/data:/data
+    ports:
+      - 8097:8000
+    restart: unless-stopped
+
+  grocy:
+    image: lscr.io/linuxserver/grocy:latest
+    container_name: grocy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Zagreb
+    volumes:
+      - ./grocy:/config
+    ports:
+      - 8098:80
+    restart: unless-stopped

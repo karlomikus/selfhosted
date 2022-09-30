@@ -1,5 +1,7 @@
 # My LAN selfhosted apps
 
+[Blog post with more information.](https://karlomikus.com/blog/my-home-server-and-self-hosting-applications)
+
 ## Hardware
 
 - Raspberry Pi 3
@@ -8,6 +10,8 @@
 ## Setup
 
 ### Mount media folder
+
+**UPDATE: Jellyfin is now hosted on my dekstop PC, where my media is located**
 
 I use windows share from my PC. Enable share on a folder you want and mount it on server
 
@@ -53,6 +57,8 @@ $ sudo systemctl start cockpit
 
 ### Accessing services via .local domains
 
+**UPDATE: I switched to cloudflare DNS**
+
 You need DNS for this to work. Since I'm using adguard as my DNS, I can add DNS rewrites.
 
 - Go to you adguard instance > Filters > DNS Rewrites
@@ -65,7 +71,7 @@ To access home assistant via reverse proxy you [need additional configuration](h
 Configure your router to work with adguard [following this guide](https://www.reddit.com/r/pihole/comments/dfm5j4/guide_for_asuswrtmerlin_users_with_screenshots/).
 
 ## Todo
-- setup vpn (blocked by ISP router unable to switch to bridge mode)
+- ~~setup vpn (blocked by ISP router unable to switch to bridge mode)~~
 - ~~fix permissions~~
 - ~~remove privileged~~
 - ~~setup container reverse proxy~~
@@ -78,6 +84,6 @@ Configure your router to work with adguard [following this guide](https://www.re
 - Cockpit for monitoring
 - Portainer for container management
 - Traefik for reverse proxy
-- [TODO] Paperless-NGX for document management
+- Paperless-NGX for document management
 - [TODO] Authelia for service authentication
 - [TODO] Nextcloud for personal cloud
